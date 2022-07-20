@@ -83,6 +83,10 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('vrex_lambda', 1e1, lambda r: 10**r.uniform(-1, 5))
         _hparam('vrex_penalty_anneal_iters', 500,
                 lambda r: int(10**r.uniform(0, 4)))
+    
+    elif algorithm == "fDRO":
+        _hparam('SVP_lambda', 3, lambda r: r.choice([0.05, 0.1, 0.5, 1,1.5,2,3]))
+        _hparam('SVP_weights', 'average', lambda r: r.choice(['average']))
 
     elif algorithm == "SD":
         _hparam('sd_reg', 0.1, lambda r: 10**r.uniform(-5, -1))
