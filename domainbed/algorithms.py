@@ -51,6 +51,7 @@ ALGORITHMS = [
     'Transfer', 
     'CausIRL_CORAL',
     'CausIRL_MMD',
+    'fDRO'
 ]
 
 def get_algorithm_class(algorithm_name):
@@ -475,6 +476,61 @@ class GroupDRO(ERM):
 
         return {'loss': loss.item()}
 
+    
+class fDRO(ERM):
+    """fDRO"""
+    def __init__(self, input_shape, num_classes, num_domains, hparams):
+        super(SVP, self).__init__(input_shape, num_classes, num_domains,
+                                  hparams)
+        # self.register_buffer('update_count', torch.tensor([0]))
+
+    def update(self, minibatches, unlabeled=None):
+        
+        penalty_weight = self.hparams["SVP_lambda"]
+        weights = self.hparams["SVP_weights"]
+
+        if weights == "same":
+            all_x = torch.cat([x for x, y in minibatches])
+            all_y = torch.cat([y for x, y in minibatches])
+            all_logits = self.network(all_x)
+            all_loss = F.cross_entropy(all_logits, all_y, reduction='none')
+
+            mean = all_loss.mean()
+            # penalty = all_loss.std()
+            penalty = torch.std(all_loss)
+
+            loss = mean + penalty_weight * penalty
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            
+        elif weights == "average":
+            nll = 0
+            all_x = torch.cat([x for x, y in minibatches])
+            all_logits = self.network(all_x)
+            all_logits_idx = 0
+            mean_losses = torch.zeros(len(minibatches))
+            losses = []
+            for i, (x, y) in enumerate(minibatches):
+                logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
+                all_logits_idx += x.shape[0]
+                losses.append(F.cross_entropy(logits, y,reduction='none'))
+                nll = F.cross_entropy(logits, y)
+                mean_losses[i] = nll
+
+            mean = mean_losses.mean()
+            penalty = torch.FloatTensor([((loss - mean)**2).mean() 
+                                         for loss in losses]).mean()
+    
+            loss = mean + penalty_weight * penalty
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()            
+            
+        # self.update_count += 1
+        return {'loss': loss.item(),
+                'mean': mean.item(),
+                'penalty': penalty.item()}
 
 class MLDG(ERM):
     """
