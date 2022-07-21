@@ -480,7 +480,7 @@ class GroupDRO(ERM):
 class fDRO(ERM):
     """fDRO"""
     def __init__(self, input_shape, num_classes, num_domains, hparams):
-        super(SVP, self).__init__(input_shape, num_classes, num_domains,
+        super(fDRO, self).__init__(input_shape, num_classes, num_domains,
                                   hparams)
         # self.register_buffer('update_count', torch.tensor([0]))
 
