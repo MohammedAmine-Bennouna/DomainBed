@@ -71,11 +71,24 @@ class ResNet(torch.nn.Module):
     def __init__(self, input_shape, hparams):
         super(ResNet, self).__init__()
         if hparams['resnet18']:
-            self.network = torchvision.models.resnet18(pretrained=True)
-            self.n_outputs = 512
+            try:
+                model0 = torchvision.models.resnet18(pretrained=False)
+                model0.load_state_dict(torch.load("/gcs/xcloud-shared/bennouna/networks/resnet18"))
+                self.network = model0
+                self.n_outputs = 512
+            except:
+                self.network = torchvision.models.resnet18(pretrained=True)
+                self.n_outputs = 512
         else:
-            self.network = torchvision.models.resnet50(pretrained=True)
-            self.n_outputs = 2048
+            try:
+                model0 = torchvision.models.resnet50(pretrained=False)
+                model0.load_state_dict(torch.load("/gcs/xcloud-shared/bennouna/networks/resnet50"))
+                self.network = model0
+                self.n_outputs = 2048
+            except:
+                self.network = torchvision.models.resnet50(pretrained=True)
+                self.n_outputs = 2048
+            
 
         # self.network = remove_batch_norm_from_resnet(self.network)
 
